@@ -13,13 +13,18 @@ MonoBehaviour:
   m_Name: Bubble_Standard
   m_EditorClassIdentifier: Assembly-CSharp::HexSlice.Data.BubbleConfigSO
   skinId: default
-  bodySprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-  glossSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-  shadowSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-  eyeWhiteSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-  pupilSprite: {fileID: 0}
-  sweatDropSprite: {fileID: 0}
+  bodySprite: {fileID: 21300000, guid: e120bdcd48fc062489c00edcaba96faf, type: 3}
+  glossSprite: {fileID: 21300000, guid: 91d7a69c2c52c55418c4d3cec2b05adb, type: 3}
+  shadowSprite: {fileID: 21300000, guid: 8da1fd7a0519c5149a743eaed9df40e2, type: 3}
+  sweatDropSprite: {fileID: 21300000, guid: dc4cae7c573f89d458e1795d2a755df7, type: 3}
   bodyTint: {r: 0.6981132, g: 0.07244563, b: 0.07244563, a: 1}
+  leftEyeSprite: {fileID: 21300000, guid: 15cf82efb34b52b4aa8c92a0ad5aa183, type: 3}
+  rightEyeSprite: {fileID: 21300000, guid: 1dffc10ab4489314cb071210dbd19f43, type: 3}
+  leftPupilSprite: {fileID: 21300000, guid: 8cf38d67135925e45862053a505d807f, type: 3}
+  rightPupilSprite: {fileID: 21300000, guid: 8cf38d67135925e45862053a505d807f, type: 3}
+  leftPupilOffset: {x: -0.42, y: 0.1}
+  rightPupilOffset: {x: 0.42, y: 0.1}
+  pupilScale: 1
   radius: 0.42
   baseSpeed: 3.2
   behavior: 0
