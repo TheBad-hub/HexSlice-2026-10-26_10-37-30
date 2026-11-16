@@ -20,6 +20,7 @@ namespace HexSlice.Gameplay
         [Header("Префабы сущностей (Assets/Prefabs/Gameplay)")]
         [SerializeField] private JellyBubble bubblePrefab;
         [SerializeField] private GreedCoin greedCoinPrefab;
+        [SerializeField] private SlicedChunk slicedChunkPrefab;
 
         [Header("Конфиги уровней (Assets/Data)")]
         [SerializeField] private LevelConfigSO[] levelConfigs;
@@ -31,6 +32,7 @@ namespace HexSlice.Gameplay
         [SerializeField] private float nearMissDistanceMargin = 0.55f;
         [SerializeField] private float nearMissChargeGain = 0.45f;
         [SerializeField] private float bubbleHitBuffer = 0.08f;
+
 
         // События для UI (Этап 4: HUDView подписывается на них)
         public event Action<int> OnLevelStarted;
@@ -177,18 +179,43 @@ namespace HexSlice.Gameplay
                 }
             }
 
-            // 2. Спавн Greed-монеток в углах соты
+            // 2. Спавн Greed-монеток: прижаты к случайным стенкам соты изнутри
             if (greedCoinPrefab != null && hexBoard.Polygon.Count >= 3)
             {
-                int coinCount = _currentConfig != null ? _currentConfig.greedCoinsCount : 2;
-                int coinValue = _currentConfig != null ? _currentConfig.coinValue : 5;
                 int polyCount = hexBoard.Polygon.Count;
+                int coinCount = _currentConfig != null ? Mathf.Min(_currentConfig.greedCoinsCount, polyCount) : 2;
+                int coinValue = _currentConfig != null ? _currentConfig.coinValue : 5;
+
+                // Случайный выбор разных стенок (без повторов)
+                List<int> edgeIndices = new List<int>();
+                for (int idx = 0; idx < polyCount; idx++) edgeIndices.Add(idx);
+
+                for (int idx = edgeIndices.Count - 1; idx > 0; idx--)
+                {
+                    int r = UnityEngine.Random.Range(0, idx + 1);
+                    int tmp = edgeIndices[idx];
+                    edgeIndices[idx] = edgeIndices[r];
+                    edgeIndices[r] = tmp;
+                }
+
+                // Безопасный отступ монетки внутрь соты от стенки
+                float inwardShift = 0.52f;
 
                 for (int i = 0; i < coinCount; i++)
                 {
-                    int vertexIdx = (i * (polyCount / Mathf.Max(1, coinCount))) % polyCount;
-                    Vector2 corner = hexBoard.Polygon[vertexIdx];
-                    Vector2 coinPos = Vector2.Lerp(corner, hexBoard.Centroid, 0.24f);
+                    int edgeIdx = edgeIndices[i];
+                    Vector2 p1 = hexBoard.Polygon[edgeIdx];
+                    Vector2 p2 = hexBoard.Polygon[(edgeIdx + 1) % polyCount];
+
+                    // Случайная позиция вдоль стенки (от 30% до 70% длины ребра)
+                    float t = UnityEngine.Random.Range(0.30f, 0.70f);
+                    Vector2 pointOnWall = Vector2.Lerp(p1, p2, t);
+
+                    // Вектор строго внутрь соты к ее центру
+                    Vector2 toCentroid = (hexBoard.Centroid - pointOnWall).normalized;
+
+                    // Монетка сдвигается строго внутрь соты, касаясь стенки изнутри
+                    Vector2 coinPos = pointOnWall + toCentroid * inwardShift;
 
                     GreedCoin coin = Instantiate(greedCoinPrefab, entitiesContainer);
                     coin.Initialize(coinPos, coinValue);
@@ -338,6 +365,18 @@ namespace HexSlice.Gameplay
 
             hexBoard.ApplyCut(retained, discarded);
 
+            if (slicedChunkPrefab != null)
+            {
+                SlicedChunk chunk = Instantiate(slicedChunkPrefab, entitiesContainer);
+                Material boardMat = hexBoard.GetComponent<MeshRenderer>() != null ? hexBoard.GetComponent<MeshRenderer>().sharedMaterial : null;
+                chunk.Initialize(discarded, cutStart, cutEnd, boardMat);
+            }
+
+            if (VFXManager.Instance != null)
+            {
+                Vector2 chunkCenter = PolygonMath.GetCentroid(discarded);
+                VFXManager.Instance.PlaySliceShatter(chunkCenter, (cutEnd - cutStart));
+            }
             if (hexBoard.CurrentShrinkPercent >= _targetShrink)
             {
                 CompleteCurrentLevel();
@@ -360,6 +399,10 @@ namespace HexSlice.Gameplay
 
             float regenPct = hexBoard.RegeneratePenalty(3.5f, 7.0f);
             EmitToast($"Задета капелька (-1 жизнь)! Сота регенерировала на +{regenPct:F1}%");
+
+            // Добавь при регенерации:
+            if (VFXManager.Instance != null)
+                VFXManager.Instance.PlayRegenPenalty(hexBoard.Centroid);
         }
 
         private void CompleteCurrentLevel()
@@ -413,6 +456,9 @@ namespace HexSlice.Gameplay
 
         private void HandleCoinCollected(GreedCoin coin, int val)
         {
+                        // Добавь в начало метода:
+            if (VFXManager.Instance != null)
+                VFXManager.Instance.PlayCoinCollect(coin.Position);
             _activeCoins.Remove(coin);
             TotalCoins += val;
             OnCoinsChanged?.Invoke(TotalCoins);
@@ -421,6 +467,9 @@ namespace HexSlice.Gameplay
 
         private void HandleCoinDestroyed(GreedCoin coin)
         {
+            if (VFXManager.Instance != null)
+                VFXManager.Instance.PlayCoinDestroyed(coin.Position);
+
             _activeCoins.Remove(coin);
             EmitToast("Капелька разбила Greed-монетку!");
         }

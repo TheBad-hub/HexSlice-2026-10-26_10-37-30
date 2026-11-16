@@ -13,10 +13,11 @@ namespace HexSlice.Gameplay
         [SerializeField] private ParticleSystem shatterVfx;
 
         [Header("Параметры")]
-        [SerializeField] private float hitRadius = 0.24f;
+        [SerializeField] private float hitRadius = 0.35f;
         [SerializeField] private float pulseSpeed = 4.5f;
         [SerializeField] private float pulseAmount = 0.08f;
 
+        public float Radius => hitRadius;
         public Vector2 Position { get; private set; }
         public int Value { get; private set; } = 5;
         public bool IsActive { get; private set; }
@@ -39,7 +40,9 @@ namespace HexSlice.Gameplay
             Value = coinValue;
             IsActive = true;
             transform.position = new Vector3(worldPos.x, worldPos.y, 0f);
-            if (coinRenderer != null) coinRenderer.enabled = true;
+
+            if (coinRenderer != null)
+                coinRenderer.enabled = true;
         }
 
         private void Update()
@@ -72,7 +75,7 @@ namespace HexSlice.Gameplay
         {
             if (!IsActive) return false;
 
-            if (Vector2.Distance(Position, bubblePos) <= hitRadius + bubbleRadius)
+            if (Vector2.Distance(Position, bubblePos) <= Radius + bubbleRadius)
             {
                 IsActive = false;
                 if (coinRenderer != null) coinRenderer.enabled = false;
@@ -83,6 +86,13 @@ namespace HexSlice.Gameplay
                 return true;
             }
             return false;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.green;
+            Vector3 center = coinRenderer != null ? coinRenderer.transform.position : transform.position;
+            Gizmos.DrawWireSphere(center, Radius);
         }
     }
 }

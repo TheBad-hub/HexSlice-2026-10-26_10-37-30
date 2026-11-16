@@ -118,11 +118,10 @@ Transform:
   m_GameObject: {fileID: 981380938783643638}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.18, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 3914617766257376359}
+  m_Children: []
   m_Father: {fileID: 6883468180293710737}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &3095677387835923169
@@ -211,11 +210,10 @@ Transform:
   m_GameObject: {fileID: 3206625345408859696}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.18, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 83820783103288331}
+  m_Children: []
   m_Father: {fileID: 6883468180293710737}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &7825915231691761069
@@ -304,7 +302,7 @@ Transform:
   m_GameObject: {fileID: 3279924716531291069}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.54497, y: -0.11319, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -331,11 +329,11 @@ MonoBehaviour:
   glossRenderer: {fileID: 6022940882306758053}
   shadowRenderer: {fileID: 3069135284819969845}
   panicSweatRenderer: {fileID: 8242889307985079562}
-  eyesContainer: {fileID: 6883468180293710737}
   leftEyeRenderer: {fileID: 3095677387835923169}
-  rightEyeRenderer: {fileID: 7825915231691761069}
   leftPupilRenderer: {fileID: 6417344508775182194}
+  rightEyeRenderer: {fileID: 7825915231691761069}
   rightPupilRenderer: {fileID: 54168877352269920}
+  maxPupilShift: 0.09
   bounceVfx: {fileID: 0}
 --- !u!1 &3894038460040558993
 GameObject:
@@ -440,7 +438,7 @@ GameObject:
   - component: {fileID: 3914617766257376359}
   - component: {fileID: 6417344508775182194}
   m_Layer: 0
-  m_Name: Pupil
+  m_Name: LeftPupil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -454,12 +452,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4834327357039737031}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 5587250648838538247}
+  m_Father: {fileID: 6883468180293710737}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &6417344508775182194
 SpriteRenderer:
@@ -579,7 +577,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: 9fa97ae0361e80e429a00d457dd05aa4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -600,7 +598,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 6
   m_MaskInteraction: 0
   m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -716,7 +714,7 @@ GameObject:
   - component: {fileID: 83820783103288331}
   - component: {fileID: 54168877352269920}
   m_Layer: 0
-  m_Name: Pupil
+  m_Name: RightPupil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -730,12 +728,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8629681051320719582}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1053084353106559677}
+  m_Father: {fileID: 6883468180293710737}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &54168877352269920
 SpriteRenderer:
@@ -826,7 +824,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 3914617766257376359}
   - {fileID: 5587250648838538247}
+  - {fileID: 83820783103288331}
   - {fileID: 1053084353106559677}
   m_Father: {fileID: 3890968135461345552}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

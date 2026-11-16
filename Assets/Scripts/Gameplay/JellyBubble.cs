@@ -8,24 +8,23 @@ namespace HexSlice.Gameplay
 {
     public class JellyBubble : MonoBehaviour
     {
-        [Header("Слои префаба (SpriteRenderer)")]
+        [Header("Слои визуала (SpriteRenderer из Figma)")]
         [SerializeField] private SpriteRenderer bodyRenderer;
         [SerializeField] private SpriteRenderer glossRenderer;
         [SerializeField] private SpriteRenderer shadowRenderer;
         [SerializeField] private SpriteRenderer panicSweatRenderer;
 
-        [Header("Глаза и Зрачки (Transform / SpriteRenderer)")]
-        [SerializeField] private Transform eyesContainer;
+        [Header("Левый глаз и зрачок")]
         [SerializeField] private SpriteRenderer leftEyeRenderer;
-        [SerializeField] private SpriteRenderer rightEyeRenderer;
         [SerializeField] private SpriteRenderer leftPupilRenderer;
+
+        [Header("Правый глаз и зрачок")]
+        [SerializeField] private SpriteRenderer rightEyeRenderer;
         [SerializeField] private SpriteRenderer rightPupilRenderer;
 
-        [Header("Пропорции слоев относительно диаметра капельки")]
-        [SerializeField] private float eyeSizeRatio = 0.28f;
-        [SerializeField] private float pupilSizeRatio = 0.52f;
-        [SerializeField] private float eyeSpacingRatio = 0.30f;
-        [SerializeField] private float eyeHeightOffsetRatio = 0.10f;
+        [Header("Движение зрачков")]
+        [Tooltip("Максимальный сдвиг зрачка внутри глаза при движении")]
+        [SerializeField] private float maxPupilShift = 0.05f;
 
         [Header("Эффекты")]
         [SerializeField] private ParticleSystem bounceVfx;
@@ -46,10 +45,21 @@ namespace HexSlice.Gameplay
         private float _behaviorTimer;
         private float _currentSpeedMultiplier = 1f;
 
-        private Vector3 _bodyBaseScale = Vector3.one;
-        private Vector3 _glossBaseScale = Vector3.one;
-        private Vector3 _leftEyeBaseScale = Vector3.one;
-        private Vector3 _rightEyeBaseScale = Vector3.one;
+        private Vector3 _bodyInitialLocalScale = Vector3.one;
+        private Vector3 _leftPupilInitialLocalPos = Vector3.zero;
+        private Vector3 _rightPupilInitialLocalPos = Vector3.zero;
+
+        private void Awake()
+        {
+            if (bodyRenderer != null)
+                _bodyInitialLocalScale = bodyRenderer.transform.localScale;
+
+            if (leftPupilRenderer != null)
+                _leftPupilInitialLocalPos = leftPupilRenderer.transform.localPosition;
+
+            if (rightPupilRenderer != null)
+                _rightPupilInitialLocalPos = rightPupilRenderer.transform.localPosition;
+        }
 
         public void Initialize(BubbleConfigSO config, Vector2 startPos)
         {
@@ -64,107 +74,77 @@ namespace HexSlice.Gameplay
             _wobblePhase = UnityEngine.Random.Range(0f, 10f);
             _blinkTimer = UnityEngine.Random.Range(1.5f, 3.5f);
             transform.position = new Vector3(Position.x, Position.y, 0f);
-            transform.localScale = Vector3.one;
 
-            ApplySkinAndNormalizeSizes();
+            ApplySkinSprites();
+            FitScaleToPhysicalRadius();
         }
 
-        private void ApplySkinAndNormalizeSizes()
+        private void ApplySkinSprites()
         {
-            float targetDiameter = Radius * 2f;
+            if (_config == null) return;
 
             if (bodyRenderer != null)
             {
-                if (_config != null && _config.bodySprite != null)
-                    bodyRenderer.sprite = _config.bodySprite;
-                if (_config != null)
-                    bodyRenderer.color = _config.bodyTint;
-
-                bodyRenderer.transform.localPosition = Vector3.zero;
-                _bodyBaseScale = CalcScaleForWorldSize(bodyRenderer.sprite, targetDiameter);
-                bodyRenderer.transform.localScale = _bodyBaseScale;
+                if (_config.bodySprite != null) bodyRenderer.sprite = _config.bodySprite;
+                bodyRenderer.color = _config.bodyTint;
             }
 
-            if (glossRenderer != null)
+            if (glossRenderer != null && _config.glossSprite != null)
+                glossRenderer.sprite = _config.glossSprite;
+
+            if (shadowRenderer != null && _config.shadowSprite != null)
+                shadowRenderer.sprite = _config.shadowSprite;
+
+            // Левый глаз и зрачок
+            if (leftEyeRenderer != null && _config.leftEyeSprite != null)
+                leftEyeRenderer.sprite = _config.leftEyeSprite;
+
+            if (leftPupilRenderer != null)
             {
-                if (_config != null && _config.glossSprite != null)
-                    glossRenderer.sprite = _config.glossSprite;
+                if (_config.leftPupilSprite != null)
+                    leftPupilRenderer.sprite = _config.leftPupilSprite;
 
-                glossRenderer.transform.localPosition = Vector3.zero;
-                _glossBaseScale = CalcScaleForWorldSize(glossRenderer.sprite, targetDiameter * 0.92f);
-                glossRenderer.transform.localScale = _glossBaseScale;
+                _leftPupilInitialLocalPos = _config.leftPupilOffset;
+                leftPupilRenderer.transform.localPosition = _leftPupilInitialLocalPos;
+                leftPupilRenderer.transform.localScale = Vector3.one * _config.pupilScale;
             }
 
-            if (shadowRenderer != null)
+            // Правый глаз и зрачок
+            if (rightEyeRenderer != null && _config.rightEyeSprite != null)
+                rightEyeRenderer.sprite = _config.rightEyeSprite;
+
+            if (rightPupilRenderer != null)
             {
-                if (_config != null && _config.shadowSprite != null)
-                    shadowRenderer.sprite = _config.shadowSprite;
+                if (_config.rightPupilSprite != null)
+                    rightPupilRenderer.sprite = _config.rightPupilSprite;
 
-                shadowRenderer.transform.localPosition = new Vector3(0f, -Radius * 0.1f, 0f);
-                shadowRenderer.transform.localScale = CalcScaleForWorldSize(shadowRenderer.sprite, targetDiameter * 1.08f);
+                _rightPupilInitialLocalPos = _config.rightPupilOffset;
+                rightPupilRenderer.transform.localPosition = _rightPupilInitialLocalPos;
+                rightPupilRenderer.transform.localScale = Vector3.one * _config.pupilScale;
             }
 
-            // Выставляем глаза и зрачки пропорционально радиусу капельки
-            float eyeWorldSize = targetDiameter * eyeSizeRatio;
-            float eyeX = Radius * eyeSpacingRatio;
-            float eyeY = Radius * eyeHeightOffsetRatio;
-
-            if (leftEyeRenderer != null)
-            {
-                if (_config != null && _config.eyeWhiteSprite != null)
-                    leftEyeRenderer.sprite = _config.eyeWhiteSprite;
-
-                leftEyeRenderer.transform.localPosition = new Vector3(-eyeX, eyeY, 0f);
-                _leftEyeBaseScale = CalcScaleForWorldSize(leftEyeRenderer.sprite, eyeWorldSize);
-                leftEyeRenderer.transform.localScale = _leftEyeBaseScale;
-            }
-
-            if (rightEyeRenderer != null)
-            {
-                if (_config != null && _config.eyeWhiteSprite != null)
-                    rightEyeRenderer.sprite = _config.eyeWhiteSprite;
-
-                rightEyeRenderer.transform.localPosition = new Vector3(eyeX, eyeY, 0f);
-                _rightEyeBaseScale = CalcScaleForWorldSize(rightEyeRenderer.sprite, eyeWorldSize);
-                rightEyeRenderer.transform.localScale = _rightEyeBaseScale;
-            }
-
-            SetupPupil(leftPupilRenderer, leftEyeRenderer, eyeWorldSize * pupilSizeRatio);
-            SetupPupil(rightPupilRenderer, rightEyeRenderer, eyeWorldSize * pupilSizeRatio);
-
+            // Капля пота при панике
             if (panicSweatRenderer != null)
             {
-                if (_config != null && _config.sweatDropSprite != null)
-                    panicSweatRenderer.sprite = _config.sweatDropSprite;
-
-                panicSweatRenderer.transform.localPosition = new Vector3(Radius * 0.75f, Radius * 0.55f, 0f);
-                panicSweatRenderer.transform.localScale = CalcScaleForWorldSize(panicSweatRenderer.sprite, targetDiameter * 0.22f);
+                if (_config.sweatDropSprite != null) panicSweatRenderer.sprite = _config.sweatDropSprite;
                 panicSweatRenderer.enabled = false;
             }
         }
 
-        private void SetupPupil(SpriteRenderer pupilSr, SpriteRenderer parentEyeSr, float targetPupilWorldSize)
+        private void FitScaleToPhysicalRadius()
         {
-            if (pupilSr == null) return;
-            if (_config != null && _config.pupilSprite != null)
-                pupilSr.sprite = _config.pupilSprite;
-
-            // Если зрачок оставили чисто белым в префабе, делаем его темно-синим, чтобы он читался на белке глаза
-            if (pupilSr.color.r > 0.9f && pupilSr.color.g > 0.9f && pupilSr.color.b > 0.9f)
-                pupilSr.color = new Color(0.06f, 0.09f, 0.16f, 1f);
-
-            float parentScaleX = parentEyeSr != null ? Mathf.Max(0.001f, parentEyeSr.transform.localScale.x) : 1f;
-            Vector3 worldScale = CalcScaleForWorldSize(pupilSr.sprite, targetPupilWorldSize);
-            pupilSr.transform.localScale = worldScale / parentScaleX;
-            pupilSr.transform.localPosition = Vector3.zero;
-        }
-
-        private static Vector3 CalcScaleForWorldSize(Sprite sprite, float targetWorldDiameter)
-        {
-            if (sprite == null) return Vector3.one * targetWorldDiameter;
-            float spriteWidth = Mathf.Max(0.001f, sprite.bounds.size.x);
-            float scale = targetWorldDiameter / spriteWidth;
-            return new Vector3(scale, scale, 1f);
+            // Масштабируем весь корень префаба так, чтобы видимый спрайт тела идеально совпал с физическим диаметром соты
+            if (bodyRenderer != null && bodyRenderer.sprite != null)
+            {
+                float spriteWidth = Mathf.Max(0.01f, bodyRenderer.sprite.bounds.size.x);
+                float targetDiameter = Radius * 2f;
+                float rootScale = targetDiameter / spriteWidth;
+                transform.localScale = new Vector3(rootScale, rootScale, 1f);
+            }
+            else
+            {
+                transform.localScale = Vector3.one * (Radius * 2f);
+            }
         }
 
         public void Tick(
@@ -258,6 +238,10 @@ namespace HexSlice.Gameplay
                         if (_config != null && _config.behavior == BubbleBehaviorType.WallBoost)
                             _currentSpeedMultiplier = _config.wallBoostMultiplier;
 
+                        // Добавь при ударе:
+                        if (VFXManager.Instance != null)
+                            VFXManager.Instance.PlayBubbleBounce(Position, normal);
+
                         if (bounceVfx != null) bounceVfx.Play();
                         OnWallBounced?.Invoke(Position);
                     }
@@ -286,33 +270,41 @@ namespace HexSlice.Gameplay
             float sx = _squash + wobble;
             float sy = (1f / Mathf.Max(0.45f, _squash)) - wobble;
 
+            // Деформируем тело капли вдоль нормали удара о соту
             if (bodyRenderer != null)
             {
                 bodyRenderer.transform.localRotation = Quaternion.Euler(0f, 0f, _squashAngle);
-                bodyRenderer.transform.localScale = new Vector3(_bodyBaseScale.x * sx, _bodyBaseScale.y * sy, 1f);
+                bodyRenderer.transform.localScale = new Vector3(_bodyInitialLocalScale.x * sx, _bodyInitialLocalScale.y * sy, 1f);
             }
 
+            // Блик сверху не крутится вместе с телом, сохраняя направление света
             if (glossRenderer != null)
             {
                 glossRenderer.transform.rotation = Quaternion.identity;
-                glossRenderer.transform.localScale = new Vector3(_glossBaseScale.x * sx, _glossBaseScale.y * sy, 1f);
             }
 
+            // Зрачки плавно смотрят в сторону вектора полета
             Vector2 dir = Velocity.sqrMagnitude > 1e-4f ? Velocity.normalized : Vector2.right;
-            if (eyesContainer != null)
-            {
-                eyesContainer.localPosition = new Vector3(dir.x * (Radius * 0.12f), dir.y * (Radius * 0.12f), 0f);
-            }
+            Vector3 pupilShift = new Vector3(dir.x * maxPupilShift, dir.y * maxPupilShift, 0f);
 
-            Vector3 pupilLocalOffset = new Vector3(dir.x * 0.18f, dir.y * 0.18f, 0f);
-            if (leftPupilRenderer != null) leftPupilRenderer.transform.localPosition = pupilLocalOffset;
-            if (rightPupilRenderer != null) rightPupilRenderer.transform.localPosition = pupilLocalOffset;
+            if (leftPupilRenderer != null)
+                leftPupilRenderer.transform.localPosition = _leftPupilInitialLocalPos + pupilShift;
 
-            float eyeYMul = _isBlinking ? 0.12f : (IsPanicked ? 1.22f : 1f);
+            if (rightPupilRenderer != null)
+                rightPupilRenderer.transform.localPosition = _rightPupilInitialLocalPos + pupilShift;
+
+            // Моргание: сплющивание глаз по оси Y
+            float eyeScaleY = _isBlinking ? 0.1f : (IsPanicked ? 1.25f : 1f);
             if (leftEyeRenderer != null)
-                leftEyeRenderer.transform.localScale = new Vector3(_leftEyeBaseScale.x, _leftEyeBaseScale.y * eyeYMul, 1f);
+            {
+                Vector3 s = leftEyeRenderer.transform.localScale;
+                leftEyeRenderer.transform.localScale = new Vector3(s.x, eyeScaleY, s.z);
+            }
             if (rightEyeRenderer != null)
-                rightEyeRenderer.transform.localScale = new Vector3(_rightEyeBaseScale.x, _rightEyeBaseScale.y * eyeYMul, 1f);
+            {
+                Vector3 s = rightEyeRenderer.transform.localScale;
+                rightEyeRenderer.transform.localScale = new Vector3(s.x, eyeScaleY, s.z);
+            }
         }
     }
 }

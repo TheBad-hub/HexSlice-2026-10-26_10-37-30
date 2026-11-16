@@ -18,10 +18,19 @@ namespace HexSlice.Data
         public Sprite bodySprite;
         public Sprite glossSprite;
         public Sprite shadowSprite;
-        public Sprite eyeWhiteSprite;
-        public Sprite pupilSprite;
         public Sprite sweatDropSprite;
         public Color bodyTint = Color.white;
+
+        [Header("Глаза и Зрачки (Раздельно для скинов)")]
+        public Sprite leftEyeSprite;
+        public Sprite rightEyeSprite;
+        public Sprite leftPupilSprite;
+        public Sprite rightPupilSprite;
+
+        [Header("Позиционирование зрачков (для этого скина)")]
+        public Vector2 leftPupilOffset = new Vector2(-0.16f, 0.06f);
+        public Vector2 rightPupilOffset = new Vector2(0.16f, 0.06f);
+        public float pupilScale = 1.0f;
 
         [Header("Физика и Размеры")]
         [Min(0.1f)] public float radius = 0.42f;

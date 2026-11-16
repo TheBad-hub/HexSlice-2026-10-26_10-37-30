@@ -229,5 +229,31 @@ namespace HexSlice.Math
             result.exitPt = intersections[1].pt;
             return result;
         }
+
+        public static Vector2 CalculateCornerTangentPosition(Vector2 corner, Vector2 prevCorner, Vector2 nextCorner, Vector2 centroid, float coinRadius, float borderPadding = 0.05f)
+        {
+            Vector2 e1 = (prevCorner - corner).normalized;
+            Vector2 e2 = (nextCorner - corner).normalized;
+
+            Vector2 bisector = e1 + e2;
+            if (bisector.sqrMagnitude < 1e-4f)
+            {
+                Vector2 n = new Vector2(-e1.y, e1.x);
+                if (Vector2.Dot(n, centroid - corner) < 0f) n = -n;
+                return corner + n * (coinRadius + borderPadding);
+            }
+
+            bisector.Normalize();
+            if (Vector2.Dot(bisector, centroid - corner) < 0f)
+                bisector = -bisector;
+
+            float cosHalfAngle = Mathf.Clamp(Vector2.Dot(e1, bisector), 0.1f, 0.999f);
+            float sinHalfAngle = Mathf.Sqrt(1f - cosHalfAngle * cosHalfAngle);
+
+            float totalR = coinRadius + borderPadding;
+            float distFromCorner = totalR / Mathf.Max(0.15f, sinHalfAngle);
+
+            return corner + bisector * distFromCorner;
+        }
     }
 }
